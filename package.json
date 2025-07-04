@@ -1,0 +1,32 @@
+{
+  "name": "tasktrackr",
+  "version": "1.0.0",
+  "description": "An offline-first, cross-platform personal and team task manager with reminders, file attachments, and progress tracking",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:auth\" \"npm run dev:task\" \"npm run dev:notification\" \"npm run dev:client\"",
+    "dev:auth": "cd auth-service && npm run dev",
+    "dev:task": "cd task-service && npm run dev",
+    "dev:notification": "cd notification-service && npm run dev",
+    "dev:client": "cd client && npm start",
+    "install:all": "npm install && cd auth-service && npm install && cd ../task-service && npm install && cd ../notification-service && npm install && cd ../client && npm install",
+    "build": "cd client && npm run build",
+    "test": "npm run test:auth && npm run test:task && npm run test:notification && npm run test:client",
+    "test:auth": "cd auth-service && npm test",
+    "test:task": "cd task-service && npm test",
+    "test:notification": "cd notification-service && npm test",
+    "test:client": "cd client && npm test"
+  },
+  "workspaces": [
+    "auth-service",
+    "task-service", 
+    "notification-service",
+    "client",
+    "common"
+  ],
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "keywords": ["task-manager", "mern", "offline-first", "pwa", "productivity"],
+  "author": "TaskTrackr Team",
+  "license": "MIT"
+}
