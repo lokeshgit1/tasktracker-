@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:6.0
+    container_name: tasktrackr-mongodb-dev
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password123
+      MONGO_INITDB_DATABASE: tasktrackr_dev
+    volumes:
+      - mongodb_dev_data:/data/db
+      - ./common/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
+    networks:
+      - tasktrackr-dev-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: tasktrackr-redis-dev
+    ports:
+      - "6379:6379"
+    networks:
+      - tasktrackr-dev-network
+
+  # Only run supporting services in development
+  # The actual applications will run locally with npm run dev
+
+volumes:
+  mongodb_dev_data:
+
+networks:
+  tasktrackr-dev-network:
+    driver: bridge
