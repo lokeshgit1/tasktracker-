@@ -1,0 +1,118 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:6.0
+    container_name: tasktrackr-mongodb
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password123
+      MONGO_INITDB_DATABASE: tasktrackr
+    volumes:
+      - mongodb_data:/data/db
+      - ./common/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
+    networks:
+      - tasktrackr-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: tasktrackr-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - tasktrackr-network
+
+  auth-service:
+    build: ./auth-service
+    container_name: tasktrackr-auth
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=development
+      - PORT=3001
+      - MONGODB_URI=mongodb://admin:password123@mongodb:27017/tasktrackr?authSource=admin
+      - JWT_SECRET=your-super-secret-jwt-key-change-in-production
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - mongodb
+      - redis
+    networks:
+      - tasktrackr-network
+    volumes:
+      - ./auth-service:/app
+      - /app/node_modules
+
+  task-service:
+    build: ./task-service
+    container_name: tasktrackr-tasks
+    ports:
+      - "3002:3002"
+    environment:
+      - NODE_ENV=development
+      - PORT=3002
+      - MONGODB_URI=mongodb://admin:password123@mongodb:27017/tasktrackr?authSource=admin
+      - JWT_SECRET=your-super-secret-jwt-key-change-in-production
+      - CLOUDINARY_CLOUD_NAME=your-cloudinary-name
+      - CLOUDINARY_API_KEY=your-cloudinary-key
+      - CLOUDINARY_API_SECRET=your-cloudinary-secret
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - mongodb
+      - redis
+    networks:
+      - tasktrackr-network
+    volumes:
+      - ./task-service:/app
+      - /app/node_modules
+
+  notification-service:
+    build: ./notification-service
+    container_name: tasktrackr-notifications
+    ports:
+      - "3003:3003"
+    environment:
+      - NODE_ENV=development
+      - PORT=3003
+      - MONGODB_URI=mongodb://admin:password123@mongodb:27017/tasktrackr?authSource=admin
+      - JWT_SECRET=your-super-secret-jwt-key-change-in-production
+      - EMAIL_HOST=smtp.gmail.com
+      - EMAIL_PORT=587
+      - EMAIL_USER=your-email@gmail.com
+      - EMAIL_PASS=your-app-password
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - mongodb
+      - redis
+    networks:
+      - tasktrackr-network
+    volumes:
+      - ./notification-service:/app
+      - /app/node_modules
+
+  client:
+    build: ./client
+    container_name: tasktrackr-client
+    ports:
+      - "3000:3000"
+    environment:
+      - REACT_APP_AUTH_SERVICE_URL=http://localhost:3001
+      - REACT_APP_TASK_SERVICE_URL=http://localhost:3002
+      - REACT_APP_NOTIFICATION_SERVICE_URL=http://localhost:3003
+    depends_on:
+      - auth-service
+      - task-service
+      - notification-service
+    networks:
+      - tasktrackr-network
+    volumes:
+      - ./client:/app
+      - /app/node_modules
+
+volumes:
+  mongodb_data:
+
+networks:
+  tasktrackr-network:
+    driver: bridge
